@@ -37,6 +37,7 @@ import org.pentaho.di.core.sql.SQLCondition;
 import org.pentaho.di.core.sql.SQLField;
 import org.pentaho.di.core.sql.SQLFields;
 import org.pentaho.di.core.sql.SQLLimit;
+import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.dataservice.DataServiceExecutor;
 
 import java.io.Serializable;
@@ -178,26 +179,23 @@ class CachedService implements Serializable {
 
       // Calculate trans meta version. If the service transformation changes, keys will no longer match
       int version;
-      try {
-        // Get trans meta from service instead of executor, since executor modifies the meta with every query
-        version = executor.getService().getServiceTrans().
-                getXML( true, true, true, true, true, true, true, true, true, false ).hashCode();
-      } catch ( KettleException e ) {
-        // Something has gone horribly wrong.
-        // If data service is executing, the transformation was loaded and should be serializable
-        throw new IllegalStateException( "Unable to determine version of transMeta", e );
-      }
+
+      // Get trans meta from service instead of executor, since executor modifies the meta with every query
+      TransMeta trans = executor.getService().getServiceTrans();
+      TransVersion transVersion = new TransVersion(trans);
+
+      version = transVersion.hashCode();
 
       // Extract where condition
       Optional<String> whereClause = Optional.fromNullable( sql.getWhereCondition() ).transform(
-        // Simplify  and rewrite condition, more likely to match future queries
-        new Function<SQLCondition, String>() {
-          @Override public String apply( SQLCondition input ) {
-            Condition clone = (Condition) input.getCondition().clone();
-            clone.simplify();
-            return clone.toString();
+          // Simplify  and rewrite condition, more likely to match future queries
+          new Function<SQLCondition, String>() {
+            @Override public String apply( SQLCondition input ) {
+              Condition clone = (Condition) input.getCondition().clone();
+              clone.simplify();
+              return clone.toString();
+            }
           }
-        }
       );
 
       // Extract ORDER BY fields from SQL
