@@ -50,6 +50,8 @@ public class StreamExecutionListener {
   private Observable<List<RowMetaAndData>> buffer;
   private Observable<List<RowMetaAndData>> fallbackBuffer;
   private List<RowMetaAndData> cachedWindow = Collections.synchronizedList( new ArrayList<RowMetaAndData>() );
+  private List<StreamingGeneratedTransExecution> listeners =
+    Collections.synchronizedList( new ArrayList<StreamingGeneratedTransExecution>() );
   private final AtomicBoolean isProcessing = new AtomicBoolean( false );
   private final AtomicBoolean hasWindow = new AtomicBoolean( false );
 
@@ -212,5 +214,37 @@ public class StreamExecutionListener {
   private void setCacheWindow( List<RowMetaAndData> list ) {
     this.cachedWindow.clear();
     this.cachedWindow.addAll( list );
+    notifyListeners();
+  }
+
+  /**
+   * Notifies listeners for cacheWindow updates.
+   */
+  private void notifyListeners() {
+    for ( StreamingGeneratedTransExecution listener : listeners ) {
+      listener.onData( this.cachedWindow );
+    }
+  }
+
+  /**
+   * Subscribes listener for cache window update events.
+   *
+   * @param listener - The {@link StreamingGeneratedTransExecution} to subscribe.
+   */
+  public void subscribeListener( final StreamingGeneratedTransExecution listener ) {
+    if ( !listeners.contains( listener ) ) {
+      listeners.add( listener );
+    }
+  }
+
+  /**
+   * Unsubscribes listener for cache window update events.
+   *
+   * @param listener - The {@link StreamingGeneratedTransExecution} to unsubscribe.
+   */
+  public void unsubscribeListener( final StreamingGeneratedTransExecution listener ) {
+    if ( listeners.contains( listener ) ) {
+      listeners.remove( listener );
+    }
   }
 }

@@ -51,12 +51,12 @@ public class StreamingGeneratedTransExecution implements Runnable {
   private final String query;
   private final AtomicBoolean isRunning = new AtomicBoolean( false );
 
+  private StreamExecutionListener executionListener;
+  private IDataServiceClientService.StreamingType streamingType;
   private IDataServiceClientService.StreamingMode windowMode;
   private long windowSize;
   private long windowEvery;
   private long windowLimit;
-
-  private boolean finished;
 
   /**
    * Constructor.
@@ -76,9 +76,38 @@ public class StreamingGeneratedTransExecution implements Runnable {
    * @param windowLimit The query max window size. Number of rows for a TIME_BASED streamingType and milliseconds for a
    *                 ROW_BASED streamingType.
    */
+/*  public StreamingGeneratedTransExecution( final StreamingServiceTransExecutor serviceExecutor, final Trans genTrans,
+                                           final RowListener resultRowListener, final String injectorStepName,
+                                           final String resultStepName, final String query,
+                                           final IDataServiceClientService.StreamingMode windowMode,
+                                           long windowSize, long windowEvery, long windowLimit ) {
+      this( serviceExecutor, genTrans, resultRowListener, injectorStepName, resultStepName, query,
+        IDataServiceClientService.StreamingType.POLLING, windowMode, windowSize, windowEvery, windowLimit );
+  }*/
+
+  /**
+   * Constructor.
+   *
+   * @param serviceExecutor The {@link StreamingServiceTransExecutor} service transformation executor object.
+   * @param genTrans The {@link org.pentaho.di.trans.Trans} generated transformation.
+   * @param resultRowListener The {@link org.pentaho.di.trans.step.RowListener} to be registered in the generated
+   *                          transformation
+   * @param injectorStepName The name of the step in the generated transformation where rows are injected.
+   * @param resultStepName The name of the step in the generated transformation where the results are retreived.
+   * @param query The query to be executed.
+   * @param streamingType The streaming type {@link IDataServiceClientService.StreamingType}.
+   * @param windowMode The streaming window mode {@link IDataServiceClientService.StreamingMode}.
+   * @param windowSize The query window size. Number of rows for a ROW_BASED streamingType and milliseconds for a
+   *                 TIME_BASED streamingType.
+   * @param windowEvery The query window rate. Number of rows for a ROW_BASED streamingType and milliseconds for a
+   *                 TIME_BASED streamingType.
+   * @param windowLimit The query max window size. Number of rows for a TIME_BASED streamingType and milliseconds for a
+   *                 ROW_BASED streamingType.
+   */
   public StreamingGeneratedTransExecution( final StreamingServiceTransExecutor serviceExecutor, final Trans genTrans,
                                            final RowListener resultRowListener, final String injectorStepName,
                                            final String resultStepName, final String query,
+                                           final IDataServiceClientService.StreamingType streamingType,
                                            final IDataServiceClientService.StreamingMode windowMode,
                                            long windowSize, long windowEvery, long windowLimit ) {
     this.serviceExecutor = serviceExecutor;
@@ -87,6 +116,7 @@ public class StreamingGeneratedTransExecution implements Runnable {
     this.injectorStepName = injectorStepName;
     this.resultStepName = resultStepName;
     this.query = query;
+    this.streamingType = streamingType;
     this.windowMode = windowMode;
     this.windowSize = windowSize;
     this.windowEvery = windowEvery;
@@ -94,17 +124,33 @@ public class StreamingGeneratedTransExecution implements Runnable {
   }
 
   /**
+   * Runs generated transformation with the input data given.
+   *
+   * @param rowIterator - The input data for the generated transformation.
+   */
+  public void onData( final List<RowMetaAndData> rowIterator ) {
+    try {
+      runGenTrans( rowIterator );
+    } catch ( KettleStepException e ) {
+      throw Throwables.propagate( e );
+    }
+  }
+
+  /**
    * Spans a thread to execute the transformation.
    */
   @Override public void run() {
     // This is where we will inject the rows from the service transformation step
-    StreamExecutionListener stream = serviceExecutor.getBuffer( query, windowMode, windowSize, windowEvery,
+    this.executionListener = serviceExecutor.getBuffer( query, windowMode, windowSize, windowEvery,
       windowLimit );
     try {
-      if ( stream == null ) {
+      if ( this.executionListener == null ) {
         this.runGenTrans( Collections.emptyList() );
+      } else if ( this.streamingType == null
+        || IDataServiceClientService.StreamingType.POLLING.equals( this.streamingType ) ) {
+        this.runGenTrans( this.executionListener.getCachedWindow() );
       } else {
-        this.runGenTrans( stream.getCachedWindow() );
+        this.executionListener.subscribeListener( this );
       }
     } catch ( KettleStepException e ) {
       throw Throwables.propagate( e );

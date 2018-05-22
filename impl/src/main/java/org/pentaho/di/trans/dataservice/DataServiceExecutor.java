@@ -87,6 +87,7 @@ public class DataServiceExecutor {
   private final ListMultimap<ExecutionPoint, Runnable> listenerMap;
   private final DataServiceContext context;
 
+  private IDataServiceClientService.StreamingType streamingType;
   private IDataServiceClientService.StreamingMode windowMode;
   private long windowSize;
   private long windowEvery;
@@ -101,6 +102,7 @@ public class DataServiceExecutor {
     sqlTransGenerator = builder.sqlTransGenerator;
     genTrans = builder.genTrans;
     context = builder.context;
+    streamingType = builder.streamingType;
     windowMode = builder.windowMode;
     windowSize = builder.windowSize;
     windowEvery = builder.windowEvery;
@@ -118,6 +120,7 @@ public class DataServiceExecutor {
     private Trans genTrans;
     private int rowLimit = 0;
     private long timeLimit = 0;
+    private IDataServiceClientService.StreamingType streamingType;
     private IDataServiceClientService.StreamingMode windowMode;
     private long windowSize = 0;
     private long windowEvery = 0;
@@ -154,6 +157,11 @@ public class DataServiceExecutor {
 
     public Builder timeLimit( long timeLimit ) {
       this.timeLimit = timeLimit;
+      return this;
+    }
+
+    public Builder streamingType( IDataServiceClientService.StreamingType streamingType ) {
+      this.streamingType = streamingType;
       return this;
     }
 
@@ -634,7 +642,7 @@ public class DataServiceExecutor {
     StreamingGeneratedTransExecution streamWiring =
       new StreamingGeneratedTransExecution( context.getServiceTransExecutor( streamServiceKey ),
       genTrans, resultRowListener, sqlTransGenerator.getInjectorStepName(), sqlTransGenerator.getResultStepName(),
-      sqlTransGenerator.getSql().getSqlString(), windowMode, windowSize, windowEvery, windowLimit );
+      sqlTransGenerator.getSql().getSqlString(), streamingType, windowMode, windowSize, windowEvery, windowLimit );
 
     listenerMap.get( ExecutionPoint.READY ).add( streamWiring );
 
@@ -694,7 +702,7 @@ public class DataServiceExecutor {
     if ( !service.isStreaming() ) {
       serviceTrans.waitUntilFinished();
       genTrans.waitUntilFinished();
-    } else {
+    } else if ( streamingType == null || IDataServiceClientService.StreamingType.POLLING.equals( streamingType ) ) {
       try {
         // we need to actively wait for the genTrans to finish, because otherwise it will return on the
         // waitUntilFinished since it didn't had time to start

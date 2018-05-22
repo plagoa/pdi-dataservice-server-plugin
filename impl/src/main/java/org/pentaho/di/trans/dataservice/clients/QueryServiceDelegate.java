@@ -61,4 +61,18 @@ public class QueryServiceDelegate implements Query.Service {
     }
     return null;
   }
+
+  @Override public Query prepareQuery( String sql, IDataServiceClientService.StreamingType streamingType,
+                                       IDataServiceClientService.StreamingMode windowMode, long windowSize,
+                                       long windowEvery, long windowLimit, Map<String, String> parameters )
+    throws KettleException {
+    for ( Query.Service queryService : queryServices ) {
+      Query query = queryService.prepareQuery( sql, streamingType, windowMode, windowSize, windowEvery,
+        windowLimit, parameters );
+      if ( query != null ) {
+        return query;
+      }
+    }
+    return null;
+  }
 }

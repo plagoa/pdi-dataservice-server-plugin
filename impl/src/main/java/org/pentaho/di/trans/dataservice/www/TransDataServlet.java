@@ -61,6 +61,7 @@ public class TransDataServlet extends BaseCartePlugin {
   private static final long serialVersionUID = 3634806745372015720L;
 
   private static final String MAX_ROWS = "MaxRows";
+  private static final String STREAMING_TYPE = "StreamingType";
   private static final String WINDOW_MODE = "WindowMode";
   private static final String WINDOW_SIZE = "WindowSize";
   private static final String WINDOW_EVERY = "WindowEvery";
@@ -109,6 +110,11 @@ public class TransDataServlet extends BaseCartePlugin {
 
       if ( isStreaming ) {
         String
+          streamingTypeValue =
+          !Strings.isNullOrEmpty( request.getParameter( STREAMING_TYPE ) ) ? request.getParameter( STREAMING_TYPE )
+            : request.getHeader( STREAMING_TYPE );
+
+        String
           windowModeValue =
           !Strings.isNullOrEmpty( request.getParameter( WINDOW_MODE ) ) ? request.getParameter( WINDOW_MODE )
             : request.getHeader( WINDOW_MODE );
@@ -128,6 +134,10 @@ public class TransDataServlet extends BaseCartePlugin {
           !Strings.isNullOrEmpty( request.getParameter( WINDOW_LIMIT ) ) ? request.getParameter( WINDOW_LIMIT )
             : request.getHeader( WINDOW_LIMIT );
 
+        final IDataServiceClientService.StreamingType streamingType
+          = IDataServiceClientService.StreamingType.PUSH.toString().equalsIgnoreCase( streamingTypeValue )
+          ? IDataServiceClientService.StreamingType.PUSH : IDataServiceClientService.StreamingType.POLLING;
+
         final IDataServiceClientService.StreamingMode windowMode
           = IDataServiceClientService.StreamingMode.TIME_BASED.toString().equalsIgnoreCase( windowModeValue )
           ? IDataServiceClientService.StreamingMode.TIME_BASED : IDataServiceClientService.StreamingMode.ROW_BASED;
@@ -141,7 +151,7 @@ public class TransDataServlet extends BaseCartePlugin {
         final long windowLimit = Const.toLong( windowLimitValue,
           rowBased ? clientMeta.getTimeLimit() : clientMeta.getRowLimit() );
 
-        query = client.prepareQuery( sqlQuery, windowMode, windowSize, windowEvery, windowLimit,
+        query = client.prepareQuery( sqlQuery, streamingType, windowMode, windowSize, windowEvery, windowLimit,
           parameters );
       } else {
         query = client.prepareQuery( sqlQuery, maxRows, parameters );

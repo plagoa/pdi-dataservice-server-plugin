@@ -64,6 +64,13 @@ public class AnnotationsQueryService implements Query.Service {
                                        long windowSize, long windowEvery, long windowLimit,
                                        final Map<String, String> parameters )
     throws KettleException {
+    return prepareQuery( sql, null, windowMode, windowSize, windowEvery, windowLimit, parameters );
+  }
+
+  @Override public Query prepareQuery( String sql, IDataServiceClientService.StreamingType streamingType,
+                                       IDataServiceClientService.StreamingMode windowMode, long windowSize,
+                                       long windowEvery, long windowLimit, Map<String, String> parameters )
+    throws KettleException {
     String prefix = "show annotations from ";
     if ( sql.startsWith( prefix.toLowerCase() ) ) {
       return new AnnotationsQuery( sql.substring( prefix.length() ) );

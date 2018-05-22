@@ -25,6 +25,7 @@ package org.pentaho.di.trans.dataservice.clients;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSQLException;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.value.ValueMetaString;
@@ -79,6 +80,12 @@ public class DualQueryService implements Query.Service {
   @Override public Query prepareQuery( String sqlString, IDataServiceClientService.StreamingMode windowMode,
                                        long windowSize, long windowEvery, long windowLimit,
                                        final Map<String, String> parameters ) {
+    return prepareQuery( sqlString, null, windowMode, windowSize, windowEvery, windowLimit, parameters );
+  }
+
+  @Override public Query prepareQuery( String sqlString, IDataServiceClientService.StreamingType streamingType,
+                                       IDataServiceClientService.StreamingMode windowMode, long windowSize,
+                                       long windowEvery, long windowLimit, Map<String, String> parameters ) {
     SQL sql;
     try {
       sql = new SQL( sqlString );
@@ -93,6 +100,7 @@ public class DualQueryService implements Query.Service {
       return null;
     }
   }
+
   private class DualQuery implements Query {
     public DualQuery() {
     }

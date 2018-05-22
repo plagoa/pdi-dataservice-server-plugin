@@ -103,12 +103,25 @@ public class DataServiceClient implements IDataServiceClientService {
   @Override public DataInputStream query( String sqlQuery, IDataServiceClientService.StreamingMode windowMode,
                                           long windowSize, long windowEvery,
                                           long windowLimit, Map<String, String> params ) throws SQLException {
+    return query( sqlQuery, null, windowMode, windowSize, windowEvery, windowLimit, params );
+  }
+
+  @Override public DataInputStream query( String sqlQuery, StreamingType streamingType,
+                                          StreamingMode windowMode, long windowSize,
+                                          long windowEvery, long windowLimit ) throws SQLException {
+    return query( sqlQuery, streamingType, windowMode, windowSize, windowEvery, windowLimit, ImmutableMap.of() );
+  }
+
+  @Override public DataInputStream query( String sqlQuery, StreamingType streamingType,
+                                          StreamingMode windowMode, long windowSize,
+                                          long windowEvery, long windowLimit, Map<String, String> params )
+    throws SQLException {
     try {
       // Create a pipe to for results
       SafePipedStreams pipe = new SafePipedStreams();
 
       // Prepare query, exception will be thrown if query is invalid
-      Query query = prepareQuery( sqlQuery, windowMode, windowSize, windowEvery, windowLimit, params );
+      Query query = prepareQuery( sqlQuery, streamingType, windowMode, windowSize, windowEvery, windowLimit, params );
 
       // Write query results to pipe on a separate thread
       executorService.execute( () -> {
@@ -137,10 +150,12 @@ public class DataServiceClient implements IDataServiceClientService {
     throw new KettleException( "Unable to resolve query: " + sql );
   }
 
-  public Query prepareQuery( String sql, IDataServiceClientService.StreamingMode windowMode,
+  public Query prepareQuery( String sql, IDataServiceClientService.StreamingType streamingType,
+                             IDataServiceClientService.StreamingMode windowMode,
                              long windowSize, long windowEvery, long windowLimit, Map<String, String> parameters )
     throws KettleException {
-    Query query = queryService.prepareQuery( sql, windowMode, windowSize, windowEvery, windowLimit, collectParameters( parameters ) );
+    Query query = queryService.prepareQuery( sql, streamingType, windowMode, windowSize, windowEvery,
+      windowLimit, collectParameters( parameters ) );
     if ( query != null ) {
       return query;
     }

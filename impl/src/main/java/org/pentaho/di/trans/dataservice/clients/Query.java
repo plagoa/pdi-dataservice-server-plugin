@@ -45,5 +45,9 @@ public interface Query {
     Query prepareQuery( String sql, IDataServiceClientService.StreamingMode windowMode,
                         long windowSize, long windowEvery, long windowLimit,
                         Map<String, String> parameters ) throws KettleException;
+    Query prepareQuery( String sql, IDataServiceClientService.StreamingType streamingType,
+                        IDataServiceClientService.StreamingMode windowMode,
+                        long windowSize, long windowEvery, long windowLimit,
+                        Map<String, String> parameters ) throws KettleException;
   }
 }

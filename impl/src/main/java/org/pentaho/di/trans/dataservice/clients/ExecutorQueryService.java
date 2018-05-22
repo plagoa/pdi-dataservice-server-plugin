@@ -96,6 +96,32 @@ public class ExecutorQueryService implements Query.Service {
     return query;
   }
 
+  @Override public Query prepareQuery( String sqlString, IDataServiceClientService.StreamingType streamingType,
+                                       IDataServiceClientService.StreamingMode windowMode, long windowSize,
+                                       long windowEvery, long windowLimit, Map<String, String> parameters )
+    throws KettleException {
+    SQL sql = new SQL( sqlString );
+    Query query;
+    try {
+      IMetaStore metaStore = metastoreLocator != null ? metastoreLocator.getMetastore() : null;
+      DataServiceExecutor executor = resolver.createBuilder( sql )
+        .rowLimit( 0 )
+        .streamingType( streamingType )
+        .windowMode( windowMode )
+        .windowSize( windowSize )
+        .windowEvery( windowEvery )
+        .windowLimit( windowLimit )
+        .parameters( parameters )
+        .metastore( metaStore )
+        .build();
+      query = new ExecutorQuery( executor );
+    } catch ( Exception e ) {
+      Throwables.propagateIfInstanceOf( e, KettleException.class );
+      throw new KettleException( e );
+    }
+    return query;
+  }
+
   public static DataOutputStream asDataOutputStream( OutputStream outputStream ) {
     return outputStream instanceof DataOutputStream
         ? ( (DataOutputStream) outputStream )

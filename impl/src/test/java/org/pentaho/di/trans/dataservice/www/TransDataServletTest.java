@@ -74,6 +74,7 @@ public class TransDataServletTest extends BaseServletTest {
   private static final String CONTEXT_PATH = "/sql";
   private static final String HEADER_SQL = "SQL";
   private static final String HEADER_MAX_ROWS = "MaxRows";
+  private static final String HEADER_STREAMING_TYPE = "StreamingType";
   private static final String HEADER_WINDOW_MODE = "WindowMode";
   private static final String HEADER_WINDOW_SIZE = "WindowSize";
   private static final String HEADER_WINDOW_EVERY = "WindowEvery";
@@ -83,6 +84,8 @@ public class TransDataServletTest extends BaseServletTest {
   private static final String TEST_LARGE_SQL_QUERY = TEST_SQL_QUERY + " /" + StringUtils.repeat( "*", 8000 ) + "/";
   private static final String DEBUG_TRANS_FILE = "debugtransfile";
   private static final String TEST_MAX_ROWS = "100";
+  private static final String TEST_STREAMING_TYPE_POLLING = IDataServiceClientService.StreamingType.POLLING.toString();
+  private static final String TEST_STREAMING_TYPE_PUSH = IDataServiceClientService.StreamingType.PUSH.toString();
   private static final String TEST_WINDOW_MODE_ROW = IDataServiceClientService.StreamingMode.ROW_BASED.toString();
   private static final String TEST_WINDOW_MODE_TIME = IDataServiceClientService.StreamingMode.TIME_BASED.toString();
   private static final String TEST_WINDOW_SIZE = "1";
@@ -175,6 +178,7 @@ public class TransDataServletTest extends BaseServletTest {
   public void testStreamingHeader() throws Exception {
     headers.put( HEADER_MAX_ROWS, TEST_MAX_ROWS );
     headers.put( HEADER_SQL, TEST_SQL_QUERY );
+    headers.put( HEADER_STREAMING_TYPE, TEST_STREAMING_TYPE_POLLING );
     headers.put( HEADER_WINDOW_MODE, TEST_WINDOW_MODE_TIME );
     headers.put( HEADER_WINDOW_SIZE, TEST_WINDOW_SIZE );
     headers.put( HEADER_WINDOW_EVERY, TEST_WINDOW_EVERY );
@@ -183,7 +187,8 @@ public class TransDataServletTest extends BaseServletTest {
     Query query = mock( Query.class );
     doReturn( query )
       .when( client )
-      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingType.POLLING,
+        IDataServiceClientService.StreamingMode.TIME_BASED,
         Long.valueOf( TEST_WINDOW_SIZE ),
         Long.valueOf( TEST_WINDOW_EVERY ),
         Long.valueOf( TEST_WINDOW_LIMIT ),
@@ -197,6 +202,7 @@ public class TransDataServletTest extends BaseServletTest {
 
     verify( request, times( 1 ) ).getParameter( HEADER_SQL );
     verify( request, times( 1 ) ).getParameter( HEADER_MAX_ROWS );
+    verify( request, times( 1 ) ).getParameter( HEADER_STREAMING_TYPE );
     verify( request, times( 1 ) ).getParameter( HEADER_WINDOW_MODE );
     verify( request, times( 1 ) ).getParameter( HEADER_WINDOW_SIZE );
     verify( request, times( 1 ) ).getParameter( HEADER_WINDOW_EVERY );
@@ -213,6 +219,7 @@ public class TransDataServletTest extends BaseServletTest {
   public void testStreamingParameters() throws Exception {
     parameters.put( HEADER_MAX_ROWS, TEST_MAX_ROWS );
     parameters.put( HEADER_SQL, TEST_SQL_QUERY );
+    parameters.put( HEADER_STREAMING_TYPE, TEST_STREAMING_TYPE_PUSH );
     parameters.put( HEADER_WINDOW_MODE, TEST_WINDOW_MODE_TIME );
     parameters.put( HEADER_WINDOW_SIZE, TEST_WINDOW_SIZE );
     parameters.put( HEADER_WINDOW_EVERY, TEST_WINDOW_EVERY );
@@ -221,7 +228,8 @@ public class TransDataServletTest extends BaseServletTest {
     Query query = mock( Query.class );
     doReturn( query )
       .when( client )
-      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingType.PUSH,
+        IDataServiceClientService.StreamingMode.TIME_BASED,
         Long.valueOf( TEST_WINDOW_SIZE ),
         Long.valueOf( TEST_WINDOW_EVERY ),
         Long.valueOf( TEST_WINDOW_LIMIT ),
@@ -235,12 +243,14 @@ public class TransDataServletTest extends BaseServletTest {
 
     verify( request, times( 2 ) ).getParameter( HEADER_SQL );
     verify( request, times( 2 ) ).getParameter( HEADER_MAX_ROWS );
+    verify( request, times( 2 ) ).getParameter( HEADER_STREAMING_TYPE );
     verify( request, times( 2 ) ).getParameter( HEADER_WINDOW_MODE );
     verify( request, times( 2 ) ).getParameter( HEADER_WINDOW_SIZE );
     verify( request, times( 2 ) ).getParameter( HEADER_WINDOW_EVERY );
     verify( request, times( 2 ) ).getParameter( HEADER_WINDOW_LIMIT );
     verify( request, never() ).getHeader( HEADER_SQL );
     verify( request, never() ).getHeader( HEADER_MAX_ROWS );
+    verify( request, never() ).getHeader( HEADER_STREAMING_TYPE );
     verify( request, never() ).getHeader( HEADER_WINDOW_MODE );
     verify( request, never() ).getHeader( HEADER_WINDOW_SIZE );
     verify( request, never() ).getHeader( HEADER_WINDOW_EVERY );
@@ -250,6 +260,7 @@ public class TransDataServletTest extends BaseServletTest {
   @Test
   public void testStreamingRowBasedDefaultParams() throws Exception {
     headers.put( HEADER_SQL, TEST_SQL_QUERY );
+    headers.put( HEADER_STREAMING_TYPE, TEST_STREAMING_TYPE_POLLING );
     headers.put( HEADER_WINDOW_MODE, TEST_WINDOW_MODE_ROW );
 
     streamingDataService.setTimeLimit( DEFAULT_WINDOW_MAX_TIME );
@@ -258,7 +269,8 @@ public class TransDataServletTest extends BaseServletTest {
     Query query = mock( Query.class );
     doReturn( query )
       .when( client )
-      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.ROW_BASED,
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingType.POLLING,
+        IDataServiceClientService.StreamingMode.ROW_BASED,
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
@@ -281,7 +293,8 @@ public class TransDataServletTest extends BaseServletTest {
     Query query = mock( Query.class );
     doReturn( query )
       .when( client )
-      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.ROW_BASED,
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingType.POLLING,
+        IDataServiceClientService.StreamingMode.ROW_BASED,
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),
         Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
@@ -297,6 +310,7 @@ public class TransDataServletTest extends BaseServletTest {
   @Test
   public void testStreamingTimeBasedModeDefauldParams() throws Exception {
     headers.put( HEADER_SQL, TEST_SQL_QUERY );
+    headers.put( HEADER_STREAMING_TYPE, TEST_STREAMING_TYPE_PUSH );
     headers.put( HEADER_WINDOW_MODE, TEST_WINDOW_MODE_TIME );
 
     streamingDataService.setTimeLimit( DEFAULT_WINDOW_MAX_TIME );
@@ -305,7 +319,8 @@ public class TransDataServletTest extends BaseServletTest {
     Query query = mock( Query.class );
     doReturn( query )
       .when( client )
-      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingMode.TIME_BASED,
+      .prepareQuery( TEST_SQL_QUERY, IDataServiceClientService.StreamingType.PUSH,
+        IDataServiceClientService.StreamingMode.TIME_BASED,
         Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
         Long.valueOf( DEFAULT_WINDOW_MAX_TIME ),
         Long.valueOf( DEFAULT_WINDOW_MAX_ROWS ),

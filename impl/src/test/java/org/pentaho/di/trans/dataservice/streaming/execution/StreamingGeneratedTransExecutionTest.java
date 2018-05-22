@@ -61,6 +61,8 @@ public class StreamingGeneratedTransExecutionTest {
   private String MOCK_RESULT_STEP_NAME = "Mock Result Step Name";
   private String MOCK_INJECTOR_STEP_NAME = "Mock Injector Step Name";
   private String MOCK_QUERY = "Mock Query";
+  private IDataServiceClientService.StreamingType MOCK_STREAMING_TYPE_POLLING
+    = IDataServiceClientService.StreamingType.POLLING;
   private IDataServiceClientService.StreamingMode MOCK_WINDOW_MODE_ROW_BASED
     = IDataServiceClientService.StreamingMode.ROW_BASED;
   private long MOCK_WINDOW_SIZE = 1;
@@ -97,8 +99,8 @@ public class StreamingGeneratedTransExecutionTest {
     when( genTrans.addRowProducer( MOCK_INJECTOR_STEP_NAME, 0 ) ).thenReturn( rowProducer );
 
     gentransExecutor = new StreamingGeneratedTransExecution( serviceExecutor, genTrans, resultRowListener,
-      MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE,
-      MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
+      MOCK_INJECTOR_STEP_NAME, MOCK_RESULT_STEP_NAME, MOCK_QUERY, MOCK_STREAMING_TYPE_POLLING,
+      MOCK_WINDOW_MODE_ROW_BASED, MOCK_WINDOW_SIZE, MOCK_WINDOW_EVERY, MOCK_WINDOW_MAX_SIZE );
   }
 
   @Test
